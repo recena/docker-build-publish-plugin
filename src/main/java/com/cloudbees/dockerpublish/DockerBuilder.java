@@ -317,39 +317,35 @@ public class DockerBuilder extends Builder {
             return executeCmd(result);
         }
 
-		private boolean buildAndTag() throws MacroEvaluationException, IOException, InterruptedException {
-			FilePath context = defined(getBuildContext()) ?
-                new FilePath(new File(getBuildContext())) : build.getWorkspace();
-			Iterator<String> i = getNameAndTag().iterator();
-			Result lastResult = new Result();
-			if (i.hasNext()) {
-				lastResult = executeCmd("docker build -t " + i.next()
-					+ ((isNoCache()) ? " --no-cache=true " : "") + " "
-					+ ((isForcePull()) ? " --pull=true " : "") + " "
-					+ (defined(getDockerfilePath()) ? " --file=" + getDockerfilePath() : "") + " "
-					+ context);
-			}
-			// get the image to save rebuilding it to apply the other tags
-			String image = getImageBuiltFromStdout(lastResult.stdout);
-			if (image != null) {
-				// we know the image name so apply the tags directly
-				while (lastResult.result && i.hasNext()) {
-					lastResult = executeCmd("docker tag --force=true " + image + " " + i.next());
-				}
-                                processFingerprints(image);
-			} else {
-				// we don't know the image name so rebuild the image for each tag
-				while (lastResult.result && i.hasNext()) {
-					lastResult = executeCmd("docker build -t " + i.next()
-						+ ((isNoCache()) ? " --no-cache=true " : "") + " "
-						+ ((isForcePull()) ? " --pull=true " : "") + " "
-						+ (defined(getDockerfilePath()) ? " --file=" + getDockerfilePath() : "") + " "
-						+ context);
-                                        processFingerprintsFromStdout(lastResult.stdout);
-				}
-			}
-			return lastResult.result;
-		}
+        private boolean buildAndTag() throws MacroEvaluationException, IOException, InterruptedException {
+            FilePath context = defined(getBuildContext()) ? new FilePath(new File(getBuildContext()))
+                    : build.getWorkspace();
+            Iterator<String> i = getNameAndTag().iterator();
+            Result lastResult = new Result();
+            if (i.hasNext()) {
+                lastResult = executeCmd("docker build -t " + i.next() + ((isNoCache()) ? " --no-cache=true " : "") + " "
+                        + ((isForcePull()) ? " --pull=true " : "") + " "
+                        + (defined(getDockerfilePath()) ? " --file=" + getDockerfilePath() : "") + " " + context);
+            }
+            // get the image to save rebuilding it to apply the other tags
+            String image = getImageBuiltFromStdout(lastResult.stdout);
+            if (image != null) {
+                // we know the image name so apply the tags directly
+                while (lastResult.result && i.hasNext()) {
+                    lastResult = executeCmd("docker tag --force=true " + image + " " + i.next());
+                }
+                processFingerprints(image);
+            } else {
+                // we don't know the image name so rebuild the image for each tag
+                while (lastResult.result && i.hasNext()) {
+                    lastResult = executeCmd("docker build -t " + i.next() + ((isNoCache()) ? " --no-cache=true " : "")
+                            + " " + ((isForcePull()) ? " --pull=true " : "") + " "
+                            + (defined(getDockerfilePath()) ? " --file=" + getDockerfilePath() : "") + " " + context);
+                    processFingerprintsFromStdout(lastResult.stdout);
+                }
+            }
+            return lastResult.result;
+        }
 
         private boolean dockerPushCommand() throws InterruptedException, MacroEvaluationException, IOException {
         	List<String> result = new ArrayList<String>();
